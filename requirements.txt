@@ -1,0 +1,17 @@
+# requirements.txt
+# Системные зависимости проекта
+# Установка: pip install -r requirements.txt
+
+# Детекция
+ultralytics>=8.3.0
+
+# Компьютерное зрение
+opencv-python>=4.9.0
+numpy>=1.24.0
+
+# GUI (кроссплатформенный: Windows / Linux / macOS)
+PyQt6>=6.6.0
+
+# Утилиты
+PyYAML>=6.0
+Pillow>=10.0.0
