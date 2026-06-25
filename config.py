@@ -1,96 +1,96 @@
 """
 config.py
 =========
-Central configuration for the armored vehicle detection system.
+Центральная конфигурация системы обнаружения бронетехники.
 
-To add a new vehicle class:
-  1. CLASS_COLORS_BGR      — bbox color
-  2. VULNERABILITY_ZONES   — strike zones
-  3. AMMO_TABLE            — recommended ammunition
-  4. THREAT_PRIORITY       — threat level
-  No other files need to be changed.
+Чтобы добавить новый класс техники:
+  1. CLASS_COLORS_BGR      — цвет bbox (ограничивающей рамки)
+  2. VULNERABILITY_ZONES   — зоны поражения
+  3. AMMO_TABLE            — рекомендуемые боеприпасы
+  4. THREAT_PRIORITY       — уровень угрозы
+  Никакие другие файлы изменять не нужно.
 """
 
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
-# Paths
+# Пути
 # ---------------------------------------------------------------------------
 BASE_DIR        = Path(__file__).parent
 SCREENSHOTS_DIR = BASE_DIR / "screenshots"
 ASSETS_DIR      = BASE_DIR / "assets"
-AMMO_IMAGES_DIR = ASSETS_DIR / "ammo"   # put ammo photos here
+AMMO_IMAGES_DIR = ASSETS_DIR / "ammo"   # поместите сюда фотографии боеприпасов
 DEFAULT_WEIGHTS = BASE_DIR / "weights" / "best.pt"
 
 # ---------------------------------------------------------------------------
-# Detection parameters
+# Параметры обнаружения
 # ---------------------------------------------------------------------------
 CONFIDENCE_THRESHOLD   = 0.08
 FPS_HISTORY_LEN        = 30
 TARGET_FPS             = 15
 
 # ---------------------------------------------------------------------------
-# FPS boost
+# Увеличение FPS
 # ---------------------------------------------------------------------------
-# Process every N-th frame (1 = every frame, 2 = every other → ~+40% FPS).
-# Change here if you need more FPS at the cost of slightly delayed detection.
+# Обрабатывать каждый N-й кадр (1 = каждый кадр, 2 = через один → ~+40% FPS).
+# Измените это значение, если вам нужно больше FPS ценой небольшой задержки обнаружения.
 PROCESS_EVERY_N_FRAMES = 2
 
 # ---------------------------------------------------------------------------
-# Zone marker distance threshold
+# Порог расстояния для маркеров зон
 # ---------------------------------------------------------------------------
-# Strike zone markers (×) are shown only when the target bbox area
-# exceeds this pixel threshold — i.e. the target is close enough.
+# Маркеры зон поражения (×) отображаются только тогда, когда площадь bbox цели
+# превышает этот пиксельный порог — т.е. цель находится достаточно близко.
 #
-# How to tune:
-#   - Small value  → markers appear even on distant/small targets
-#   - Large value  → markers only appear when target is very close
+# Как настраивать:
+#   - Малое значение  → маркеры появляются даже на далеких/мелких целях
+#   - Большое значение  → маркеры появляются только когда цель очень близко
 #
-# Default 4000 px² ≈ bbox of ~63×63 px, which roughly corresponds to
-# a tank at medium engagement range on a 1080p feed.
+# По умолчанию 4000 px² ≈ bbox размером ~63×63 px, что примерно соответствует
+# танку на средней дистанции боя при разрешении 1080p.
 #
-# CHANGE HERE:
+# ИЗМЕНЯТЬ ЗДЕСЬ:
 ZONE_MIN_BBOX_AREA = 4000
 
 # ---------------------------------------------------------------------------
-# Bbox colors (BGR for OpenCV) — unique color per class
+# Цвета ограничивающих рамок (BGR для OpenCV) — уникальный цвет для каждого класса
 # ---------------------------------------------------------------------------
 CLASS_COLORS_BGR: dict[str, tuple[int, int, int]] = {
-    "car":              (160, 160, 160),   # grey
-    "truck":            (180, 130, 80),    # steel
-    "military_truck":   (40,  170, 80),    # army green
-    "armored_vehicle":  (40,  180, 220),   # cyan
-    "tank":             (50,  50,  230),   # blue
-    "artillery":        (180, 40,  210),   # purple
-    "person":           (40,  220, 120),   # green
-    "explosion":        (30,  30,  255),   # red
+    "car":              (160, 160, 160),   # серый
+    "truck":            (180, 130, 80),    # стальной
+    "military_truck":   (40,  170, 80),    # армейский зеленый
+    "armored_vehicle":  (40,  180, 220),   # голубой
+    "tank":             (50,  50,  230),   # синий
+    "artillery":        (180, 40,  210),   # фиолетовый
+    "person":           (40,  220, 120),   # зеленый
+    "explosion":        (30,  30,  255),   # красный
     "default":          (80,  200, 80),
 }
 
 # ---------------------------------------------------------------------------
-# Vulnerability zones
+# Зоны уязвимости
 # ---------------------------------------------------------------------------
-# Positioning logic based on real vehicle layouts:
+# Логика позиционирования основана на компоновке реальных машин:
 #
-#   TANK (T-72/80/90 — rear engine):
-#     Engine bay (MTO) → rx=0.78 (rear, not at edge)
-#     Ammo rack  (BK)  → rx=0.44, ry=0.28 (turret, upper)
+#   ТАНК (Т-72/80/90 — заднее расположение двигателя):
+#     МТО (моторно-трансмиссионное отделение) → rx=0.78 (сзади, не с самого края)
+#     БК (боекомплект) → rx=0.44, ry=0.28 (башня, сверху)
 #
-#   ARMORED_VEHICLE (BTR-80 — front engine):
-#     Engine bay → rx=0.22 (nose)
-#     Ammo rack  → rx=0.55, ry=0.30 (turret)
+#   БРОНЕТЕХНИКА (БТР-80 — переднее расположение двигателя):
+#     МТО → rx=0.22 (нос)
+#     БК  → rx=0.55, ry=0.30 (башня)
 #
-#   MILITARY_TRUCK:
-#     Engine only → rx=0.17 (front hood)
+#   ВОЕННЫЙ ГРУЗОВИК:
+#     Только двигатель → rx=0.17 (передний капот)
 #
-#   ARTILLERY:
-#     Engine bay → rx=0.78 (rear)
-#     Breech     → rx=0.44, ry=0.26 (gun breech)
+#   АРТИЛЛЕРИЯ:
+#     МТО → rx=0.78 (сзади)
+#     Казенник → rx=0.44, ry=0.26 (казенная часть орудия)
 #
-#   PERSON: centre of mass
+#   ЧЕЛОВЕК: центр масс
 #
-# All rx,ry kept in [0.15 .. 0.85] — never at the very edge of bbox.
-# Markers only show when bbox area >= ZONE_MIN_BBOX_AREA (distance gate).
+# Все rx, ry находятся в пределах [0.15 .. 0.85] — никогда не на самом краю bbox.
+# Маркеры отображаются только когда площадь bbox >= ZONE_MIN_BBOX_AREA (ограничение по дистанции).
 
 VULNERABILITY_ZONES: dict[str, list[dict]] = {
 
@@ -117,35 +117,35 @@ VULNERABILITY_ZONES: dict[str, list[dict]] = {
         {"name": "CoM", "rx": 0.50, "ry": 0.42},
     ],
 
-    # No strike zones — observation only
+    # Нет зон поражения — только наблюдение
     "car":       [],
     "truck":     [],
     "explosion": [],
 }
 
 # ---------------------------------------------------------------------------
-# Ammunition table — short designations only
+# Таблица боеприпасов — только краткие обозначения
 # ---------------------------------------------------------------------------
 AMMO_TABLE: dict[str, dict[str, str]] = {
-    "tank":             {"primary": "3BM60",       "note": "Front: 3BM60. Side/rear: 3BK18M."},
-    "armored_vehicle":  {"primary": "3OF26",       "note": "Light armour. HE-FRAG sufficient."},
-    "military_truck":   {"primary": "3OF26",       "note": "Engine bay or cargo."},
-    "artillery":        {"primary": "3OF26",       "note": "Suppress before it fires."},
-    "car":              {"primary": "Observation", "note": "Identify before engaging."},
-    "truck":            {"primary": "3OF26",       "note": "Logistics target."},
-    "person":           {"primary": "3OF26",       "note": "Identify affiliation first."},
-    "explosion":        {"primary": "— DANGER —",  "note": "Keep distance. Hold fire."},
+    "tank":             {"primary": "3BM60",       "note": "В лоб: 3БМ60. В борт/корму: 3БК18М."},
+    "armored_vehicle":  {"primary": "3OF26",       "note": "Легкая броня. ОФС достаточно."},
+    "military_truck":   {"primary": "3OF26",       "note": "МТО или груз."},
+    "artillery":        {"primary": "3OF26",       "note": "Подавить до открытия огня."},
+    "car":              {"primary": "Observation", "note": "Идентифицировать перед поражением."},
+    "truck":            {"primary": "3OF26",       "note": "Цель логистики."},
+    "person":           {"primary": "3OF26",       "note": "Сначала определить принадлежность."},
+    "explosion":        {"primary": "— ОПАСНОСТЬ —",  "note": "Держать дистанцию. Не стрелять."},
 }
 
 AMMO_DEFAULT: dict[str, str] = {
     "primary": "—",
-    "note":    "Target not identified",
+    "note":    "Цель не идентифицирована",
 }
 
 # ---------------------------------------------------------------------------
-# Ammo photos (place JPG files in assets/ammo/)
+# Фотографии боеприпасов (помещайте файлы JPG в assets/ammo/)
 # ---------------------------------------------------------------------------
-# Filename must match exactly (case-sensitive on Linux).
+# Имя файла должно совпадать в точности (с учетом регистра в Linux).
 AMMO_IMAGES: dict[str, str] = {
     "3BM60":       "3bm60.jpg",
     "3OF26":       "3of26.jpg",
@@ -155,7 +155,7 @@ AMMO_IMAGES: dict[str, str] = {
 }
 
 # ---------------------------------------------------------------------------
-# Threat priority (used for sorting when multiple targets in frame)
+# Приоритет угрозы (используется для сортировки, когда в кадре несколько целей)
 # ---------------------------------------------------------------------------
 THREAT_PRIORITY: dict[str, int] = {
     "tank":             10,
@@ -169,7 +169,7 @@ THREAT_PRIORITY: dict[str, int] = {
 }
 
 # ---------------------------------------------------------------------------
-# Qt stylesheet — T-90M gunner interface theme
+# Таблица стилей Qt — тема интерфейса наводчика Т-90М
 # ---------------------------------------------------------------------------
 QSS_THEME = """
 QMainWindow, QDialog { background-color: #06090a; }

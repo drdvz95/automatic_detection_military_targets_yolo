@@ -1,14 +1,7 @@
 """
 ui/main_window.py
 =================
-Main window — orchestrates all components.
-
-Fixes vs previous revision:
-  - _log_widget renamed to avoid conflict with _log() method
-  - update_detections() call updated (no longer passes unique_classes)
-  - English UI text throughout
-  - TXT tactical report on screenshot
-  - Pause support
+Главное окно — управляет всеми компонентами.
 """
 
 from __future__ import annotations
@@ -35,7 +28,7 @@ from ui.widgets import LogWidget, SectionLabel
 
 
 class MainWindow(QMainWindow):
-    """Main application window. Style: T-90M gunner-operator interface."""
+    """Главное окно приложения. Стиль: интерфейс наводчика-оператора Т-90М."""
 
     def __init__(self):
         super().__init__()
@@ -45,7 +38,7 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(1280, 780)
         self.resize(1520, 900)
 
-        # State
+        # Состояние
         self._model:         object | None          = None
         self._worker:        DetectionWorker | None = None
         self._annotator:     Annotator              = Annotator()
@@ -66,7 +59,7 @@ class MainWindow(QMainWindow):
         if DEFAULT_WEIGHTS.exists():
             self._load_model(str(DEFAULT_WEIGHTS))
 
-    # ── UI construction ───────────────────────────────────────────────────
+    # ── Построение интерфейса ───────────────────────────────────────────────────
 
     def _build_ui(self) -> None:
         central = QWidget()
@@ -92,7 +85,7 @@ class MainWindow(QMainWindow):
 
         root.addWidget(self._build_log_bar())
 
-        # Signals
+        # Сигналы
         self._video_panel.source_opened.connect(self._on_source_opened)
         self._video_panel.stream_stop.connect(self._stop_worker)
         self._video_panel.pause_toggled.connect(self._on_pause_toggled)
@@ -146,14 +139,14 @@ class MainWindow(QMainWindow):
         hdr.setFixedWidth(100)
         hdr.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
 
-        # Use a distinct attribute name to avoid shadowing the _log() method
+        # Использовать уникальное имя атрибута, чтобы не перекрывать метод _log()
         self._log_widget = LogWidget()
 
         lay.addWidget(hdr)
         lay.addWidget(self._log_widget, 1)
         return bar
 
-    # ── Slots ─────────────────────────────────────────────────────────────
+    # ── Слоты ─────────────────────────────────────────────────────────────
 
     @pyqtSlot(str)
     def _on_source_opened(self, source: str) -> None:
@@ -185,7 +178,7 @@ class MainWindow(QMainWindow):
         self._video_panel.show_frame(annotated)
         self._video_panel.fps_badge.set_fps(fps)
 
-        # Updated call — no unique_classes argument
+        # Обновленный вызов — без аргумента unique_classes
         self._info_panel.update_detections(detections)
 
         if detections:
@@ -210,7 +203,7 @@ class MainWindow(QMainWindow):
             self._video_panel.set_paused_state(paused)
             self._log("Paused" if paused else "Resumed")
 
-    # ── Model ─────────────────────────────────────────────────────────────
+    # ── Модель ─────────────────────────────────────────────────────────────
 
     def _load_model_dialog(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
@@ -231,7 +224,7 @@ class MainWindow(QMainWindow):
             self._info_panel.set_model_status("LOAD ERROR", ok=False)
             self._log(f"Model error: {exc}")
 
-    # ── Screenshot + TXT report ───────────────────────────────────────────
+    # ── Скриншот + TXT отчет ───────────────────────────────────────────
 
     @pyqtSlot()
     def _take_screenshot(self) -> None:
@@ -249,7 +242,7 @@ class MainWindow(QMainWindow):
         self._log(f"Screenshot: {img_path.name}  |  Report: {txt_path.name}")
 
     def _write_report(self, path: Path, ts: str) -> None:
-        """Tactical text report saved alongside each screenshot."""
+        """Текстовый тактический отчет, сохраняемый вместе с каждым скриншотом."""
         dets   = self._current_dets
         counts = Counter(d.cls_name for d in dets)
         dt     = datetime.datetime.now()
@@ -300,7 +293,7 @@ class MainWindow(QMainWindow):
 
         path.write_text("\n".join(lines), encoding="utf-8")
 
-    # ── Helpers ───────────────────────────────────────────────────────────
+    # ── Вспомогательные функции ───────────────────────────────────────────────────────────
 
     def _stop_worker(self) -> None:
         if self._worker:
@@ -313,7 +306,7 @@ class MainWindow(QMainWindow):
         self._video_panel.set_time(now.strftime("%H:%M:%S"))
 
     def _log(self, msg: str) -> None:
-        """Append a timestamped message to the event log widget."""
+        """Добавить сообщение с отметкой времени в виджет журнала событий."""
         self._log_widget.append_event(msg)
 
     def closeEvent(self, event) -> None:  # type: ignore[override]

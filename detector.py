@@ -4,10 +4,6 @@ detector.py
 Бизнес-логика обнаружения объектов.
 
 Не импортирует ничего из ui/ — разделение ответственности.
-
-Новое:
-  - Поддержка паузы (_paused флаг с QMutex)
-  - PROCESS_EVERY_N_FRAMES для повышения FPS
 """
 
 from __future__ import annotations

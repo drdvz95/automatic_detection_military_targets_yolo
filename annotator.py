@@ -1,28 +1,27 @@
 """
 annotator.py
 ============
-All OpenCV drawing logic — frame annotation.
+Вся логика отрисовки OpenCV — аннотирование кадров.
 
-No Qt imports. Takes a numpy BGR array, returns a numpy BGR array.
-Stateless drawing functions + cached scanline overlay.
+Без импортов Qt. Принимает массив BGR numpy, возвращает массив BGR numpy.
+Функции отрисовки без состояния + кэшируемое наложение линий развертки.
 
-Key behaviour:
-  - Strike zone markers (×) are shown ONLY when bbox area >= ZONE_MIN_BBOX_AREA.
-    This creates a natural distance gate: distant targets get no markers,
-    close/medium targets get them. Tune ZONE_MIN_BBOX_AREA in config.py.
-  - No bbox fill — outline only (corner brackets + dashed rect).
-  - Simple white + crosshair at screen centre.
-  - Scanline overlay for optical sight effect.
-  - No vignette.
+  - Маркеры зон поражения (×) отображаются ТОЛЬКО тогда, когда площадь bbox >= ZONE_MIN_BBOX_AREA.
+    Это создает естественное ограничение по дистанции: на далеких целях маркеров нет,
+    на средних/близких — есть. Настраивайте ZONE_MIN_BBOX_AREA в config.py.
+  - Без заливки bbox — только контур (угловые скобки + пунктирный прямоугольник).
+  - Простое белое перекрестие + в центре экрана.
+  - Наложение линий развертки для эффекта оптического прицела.
+  - Без виньетирования.
 
 ──────────────────────────────────────────────────────────────────
-TUNING CONSTANTS (change in this file):
+КОНСТАНТЫ НАСТРОЙКИ (изменять в этом файле):
 
-  CROSSHAIR_ARM  = 40   — half-length of crosshair lines (pixels)
-  CROSSHAIR_GAP  = 12   — dead-zone radius around centre (pixels)
-  ZONE_CROSS_SZ  = 7    — half-size of strike zone × marker (pixels)
+  CROSSHAIR_ARM  = 40   — половина длины линий перекрестия (в пикселях)
+  CROSSHAIR_GAP  = 12   — радиус мертвой зоны вокруг центра (в пикселях)
+  ZONE_CROSS_SZ  = 7    — половина размера маркера зоны поражения × (в пикселях)
 
-Distance gate lives in config.py → ZONE_MIN_BBOX_AREA
+Ограничение по расстоянию находится в config.py → ZONE_MIN_BBOX_AREA
 ──────────────────────────────────────────────────────────────────
 """
 
@@ -38,23 +37,23 @@ from config import CLASS_COLORS_BGR, VULNERABILITY_ZONES, ZONE_MIN_BBOX_AREA
 from detector import Detection
 
 # ---------------------------------------------------------------------------
-# Module-level tuning constants
+# Константы настройки уровня модуля
 # ---------------------------------------------------------------------------
-CROSSHAIR_ARM  = 40    # ← crosshair line half-length (pixels)
-CROSSHAIR_GAP  = 12    # ← gap from centre to line start (pixels)
-ZONE_CROSS_SZ  = 7     # ← × marker half-size (pixels)
+CROSSHAIR_ARM  = 40    # ← половина длины линии перекрестия (в пикселях)
+CROSSHAIR_GAP  = 12    # ← отступ от центра до начала линии (в пикселях)
+ZONE_CROSS_SZ  = 7     # ← половина размера маркера × (в пикселях)
 
 
 class Annotator:
     """
-    Frame annotator. Instantiated once, reused every frame.
-    Caches the scanline overlay per frame resolution.
+    Аннотатор кадров. Инициализируется один раз, используется повторно каждый кадр.
+    Кэширует наложение линий развертки (scanlines) для каждого разрешения кадра.
     """
 
     def __init__(self) -> None:
         self._scanline_cache: dict[tuple[int, int], np.ndarray] = {}
 
-    # ── Public API ────────────────────────────────────────────────────────
+    # ── Публичный API ────────────────────────────────────────────────────────
 
     def draw(
         self,
@@ -62,13 +61,13 @@ class Annotator:
         detections: Sequence[Detection],
     ) -> np.ndarray:
         """
-        Apply all visual layers and return an annotated copy.
+        Применить все визуальные слои и вернуть аннотированную копию.
 
-        Layer order:
-          1. Detection boxes + strike zones (distance-gated)
-          2. Central crosshair
-          3. Corner reticle brackets
-          4. Scanlines
+        Порядок слоев:
+          1. Рамки обнаружения + зоны поражения (с ограничением по дистанции)
+          2. Центральное перекрестие
+          3. Угловые скобки прицела
+          4. Линии развертки
         """
         out = frame.copy()
 
@@ -81,36 +80,36 @@ class Annotator:
 
         return out
 
-    # ── Detection ─────────────────────────────────────────────────────────
+    # ── Обнаружение ─────────────────────────────────────────────────────────
 
     def _draw_detection(self, img: np.ndarray, det: Detection) -> None:
         """
-        Draw one detection:
-          - Corner brackets (no fill)
-          - Dashed outline
-          - Class label + confidence
-          - Strike zone × markers (only if close enough)
+        Отрисовать одно обнаружение:
+          - Угловые скобки (без заливки)
+          - Пунктирный контур
+          - Метка класса + уверенность
+          - Маркеры зон поражения × (только если достаточно близко)
         """
         x1, y1, x2, y2 = det.x1, det.y1, det.x2, det.y2
         color = CLASS_COLORS_BGR.get(det.cls_name, CLASS_COLORS_BGR["default"])
         bw, bh = det.bbox_w, det.bbox_h
 
-        # Dashed outline (subtle)
+        # Пунктирный контур (тонкий)
         self._dashed_rect(img, x1, y1, x2, y2, color)
 
-        # Corner brackets — primary bbox visual
+        # Угловые скобки — основной визуал bbox
         corner = max(14, min(bw, bh) // 6)
         for (ox, oy, sx, sy) in [(x1, y1, 1, 1), (x2, y1, -1, 1),
                                    (x1, y2, 1, -1), (x2, y2, -1, -1)]:
             cv2.line(img, (ox, oy), (ox + sx * corner, oy),     color, 2, cv2.LINE_AA)
             cv2.line(img, (ox, oy), (ox, oy + sy * corner),     color, 2, cv2.LINE_AA)
 
-        # Label
+        # Метка
         self._draw_label(img, det, x1, y1, color)
 
-        # ── Distance gate ─────────────────────────────────────────────────
-        # Only draw strike markers when the target is large enough in frame,
-        # i.e. close enough to matter tactically.
+        # ── Ограничение по расстоянию ─────────────────────────────────────────────────
+        # Отрисовывать маркеры поражения, только когда цель достаточно крупная в кадре,
+        # т.е. достаточно близко, чтобы иметь тактическое значение.
         if det.area >= ZONE_MIN_BBOX_AREA:
             zones = VULNERABILITY_ZONES.get(det.cls_name, [])
             for zone in zones:
@@ -118,7 +117,7 @@ class Annotator:
                 cy = int(y1 + zone["ry"] * bh)
                 self._draw_zone_marker(img, cx, cy)
 
-    # ── Helpers ───────────────────────────────────────────────────────────
+    # ── Вспомогательные функции ───────────────────────────────────────────────────────────
 
     @staticmethod
     def _dashed_rect(
@@ -171,29 +170,29 @@ class Annotator:
     @staticmethod
     def _draw_zone_marker(img: np.ndarray, cx: int, cy: int) -> None:
         """
-        Small red × at strike zone centre.
-        No rings, no labels — just the cross.
+        Маленький красный × в центре зоны поражения.
+        Без колец, без меток — только крестик.
 
-        Tune size via ZONE_CROSS_SZ at the top of this file.
+        Настраивайте размер через ZONE_CROSS_SZ в начале этого файла.
         """
-        COLOR = (30, 30, 220)   # BGR → red
+        COLOR = (30, 30, 220)   # BGR → красный
         THICK = 2
         d = int(ZONE_CROSS_SZ * 0.707)
         cv2.line(img, (cx - d, cy - d), (cx + d, cy + d), COLOR, THICK, cv2.LINE_AA)
         cv2.line(img, (cx + d, cy - d), (cx - d, cy + d), COLOR, THICK, cv2.LINE_AA)
 
-    # ── Crosshair ─────────────────────────────────────────────────────────
+    # ── Перекрестие прицела ─────────────────────────────────────────────────────────
 
     @staticmethod
     def _draw_crosshair(img: np.ndarray) -> None:
         """
-        Simple white + crosshair at frame centre with a centre gap.
+        Простое белое перекрестие + в центре кадра с разрывом посередине.
 
-        Tune via module constants CROSSHAIR_ARM / CROSSHAIR_GAP.
+        Настраивайте через константы модуля CROSSHAIR_ARM / CROSSHAIR_GAP.
         """
         h, w   = img.shape[:2]
         cx, cy = w // 2, h // 2
-        C      = (255, 255, 255)  # white
+        C      = (255, 255, 255)  # белый
         T      = 1
 
         cv2.line(img, (cx - CROSSHAIR_ARM, cy), (cx - CROSSHAIR_GAP, cy), C, T, cv2.LINE_AA)
@@ -201,11 +200,11 @@ class Annotator:
         cv2.line(img, (cx, cy - CROSSHAIR_ARM), (cx, cy - CROSSHAIR_GAP), C, T, cv2.LINE_AA)
         cv2.line(img, (cx, cy + CROSSHAIR_GAP), (cx, cy + CROSSHAIR_ARM), C, T, cv2.LINE_AA)
 
-    # ── Reticle border ────────────────────────────────────────────────────
+    # ── Граница прицела ────────────────────────────────────────────────────
 
     @staticmethod
     def _draw_reticle_border(img: np.ndarray) -> None:
-        """Corner brackets simulating the optical sight frame."""
+        """Угловые скобки, имитирующие рамку оптического прицела."""
         h, w   = img.shape[:2]
         color  = (40, 100, 40)
         length = 55
@@ -221,10 +220,10 @@ class Annotator:
             cv2.line(img, (x, y), (x + sx * length, y),        color, thick, cv2.LINE_AA)
             cv2.line(img, (x, y), (x, y + sy * length),        color, thick, cv2.LINE_AA)
 
-    # ── Scanlines ─────────────────────────────────────────────────────────
+    # ── Линии развертки ─────────────────────────────────────────────────────────
 
     def _apply_scanlines(self, img: np.ndarray) -> np.ndarray:
-        """Horizontal scanlines simulating electro-optical sight effect."""
+        """Горизонтальные линии развертки, имитирующие эффект электронно-оптического прицела."""
         h, w = img.shape[:2]
         key  = (h, w)
         if key not in self._scanline_cache:
