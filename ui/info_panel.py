@@ -1,13 +1,7 @@
 """
 ui/info_panel.py
 ================
-Right information panel.
-
-Changes in this revision:
-  - "Types" counter removed from the counters block (only "In frame" remains)
-  - All UI text switched to English
-  - 3BM42 removed from ammo table (handled in config.py)
-  - Ammo image display retained
+Правая информационная панель.
 """
 
 from __future__ import annotations
@@ -25,7 +19,7 @@ from ui.widgets import AlertIndicator, HLine, SectionLabel
 
 
 class InfoPanel(QWidget):
-    """Right panel — target ID, ammunition, indicators."""
+    """Правая панель — идентификация цели, боеприпасы, индикаторы."""
 
     screenshot_requested = pyqtSignal()
     model_load_requested = pyqtSignal()
@@ -36,7 +30,7 @@ class InfoPanel(QWidget):
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         self._build()
 
-    # ── Build ─────────────────────────────────────────────────────────────
+    # ── Построение ─────────────────────────────────────────────────────────────
 
     def _build(self) -> None:
         root = QVBoxLayout(self)
@@ -49,7 +43,7 @@ class InfoPanel(QWidget):
         root.addWidget(self._build_counters_block())
         root.addWidget(self._build_model_block())
 
-        # Screenshot button (requirement 3.2.4)
+        # Кнопка скриншота (требование 3.2.4)
         self._btn_screenshot = QPushButton("◉  SAVE SCREENSHOT WITH ANALYTICS")
         self._btn_screenshot.setFixedHeight(36)
         self._btn_screenshot.setStyleSheet("""
@@ -77,10 +71,10 @@ class InfoPanel(QWidget):
         )
         return f
 
-    # ── Blocks ────────────────────────────────────────────────────────────
+    # ── Блоки ────────────────────────────────────────────────────────────
 
     def _build_alert_block(self) -> QWidget:
-        """Alert indicator (requirement 3.2.5)."""
+        """Индикатор тревоги (требование 3.2.5)."""
         w   = self._panel()
         lay = QHBoxLayout(w)
         lay.setContentsMargins(12, 8, 12, 8)
@@ -109,7 +103,7 @@ class InfoPanel(QWidget):
         return w
 
     def _build_target_block(self) -> QWidget:
-        """Target identification."""
+        """Идентификация цели."""
         w   = self._panel()
         lay = QVBoxLayout(w)
         lay.setContentsMargins(12, 10, 12, 10)
@@ -124,7 +118,7 @@ class InfoPanel(QWidget):
         )
         lay.addWidget(self._cls_label)
 
-        # Confidence bar
+        # Шкала уверенности
         conf_row = QHBoxLayout()
         conf_row.setSpacing(6)
         lbl = QLabel("CONF:")
@@ -149,7 +143,7 @@ class InfoPanel(QWidget):
         return w
 
     def _build_ammo_block(self) -> QWidget:
-        """Recommended ammunition + photo (requirements 3.2.2, 3.1.3)."""
+        """Рекомендуемые боеприпасы + фото (требования 3.2.2, 3.1.3)."""
         w   = self._panel()
         lay = QVBoxLayout(w)
         lay.setContentsMargins(12, 10, 12, 10)
@@ -173,7 +167,7 @@ class InfoPanel(QWidget):
 
         lay.addWidget(HLine())
 
-        # Ammo photo
+        # Фото боеприпаса
         self._ammo_img_lbl = QLabel()
         self._ammo_img_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._ammo_img_lbl.setFixedHeight(90)
@@ -191,7 +185,7 @@ class InfoPanel(QWidget):
         return w
 
     def _build_counters_block(self) -> QWidget:
-        """Target counter — only 'in frame' (types counter removed)."""
+        """Счетчик целей — только 'в кадре' (счетчик типов удален)."""
         w   = self._panel()
         w.setFixedHeight(56)
         lay = QHBoxLayout(w)
@@ -217,7 +211,7 @@ class InfoPanel(QWidget):
         return v
 
     def _build_model_block(self) -> QWidget:
-        """Model status."""
+        """Статус модели."""
         w   = self._panel()
         w.setFixedHeight(52)
         lay = QVBoxLayout(w)
@@ -239,7 +233,7 @@ class InfoPanel(QWidget):
         lay.addLayout(row)
         return w
 
-    # ── Data update ───────────────────────────────────────────────────────
+    # ── Обновление данных ───────────────────────────────────────────────────────
 
     def update_detections(self, detections: list[Detection]) -> None:
         has = len(detections) > 0
@@ -263,7 +257,7 @@ class InfoPanel(QWidget):
         self._cnt_now.setText(str(len(detections)))
 
         if detections:
-            best = detections[0]   # sorted by threat level in detector.py
+            best = detections[0]   # отсортировано по уровню угрозы в detector.py
             self._cls_label.setText(best.cls_name.upper())
             conf_pct = int(best.conf * 100)
             self._conf_bar.setValue(conf_pct)
