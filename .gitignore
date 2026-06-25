@@ -1,7 +1,22 @@
-venv/
-.venv/
+# ── Python ──────────────────────────────────────────────────────────────
 __pycache__/
 *.pyc
+*.pyo
+venv/
+.venv/
+*.egg-info/
+
+# ── Папки, которые не нужны на GitHub ────────────────────────────────
 screenshots/
-.idea/
+output/
+test_images/
+test_videos/
+
+# ── OS / editor junk ──────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
 .vscode/
+.idea/
+
+# NOTE: weights/best.pt is intentionally NOT ignored — он нужен для
+# работы приложения и хранится через Git LFS (см. .gitattributes).

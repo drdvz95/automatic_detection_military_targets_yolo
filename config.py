@@ -25,7 +25,7 @@ DEFAULT_WEIGHTS = BASE_DIR / "weights" / "best.pt"
 # ---------------------------------------------------------------------------
 # Detection parameters
 # ---------------------------------------------------------------------------
-CONFIDENCE_THRESHOLD   = 0.10
+CONFIDENCE_THRESHOLD   = 0.08
 FPS_HISTORY_LEN        = 30
 TARGET_FPS             = 15
 
